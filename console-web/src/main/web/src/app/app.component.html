@@ -14,15 +14,9 @@
                     <mat-panel-description>
                       Board & Hardware
                     </mat-panel-description>
-                  </mat-expansion-panel-header>
-              
-                  <mat-form-field>
-                    <input matInput placeholder="First name">
-                  </mat-form-field>
-              
-                  <mat-form-field>
-                    <input matInput placeholder="Age">
-                  </mat-form-field>
+                  </mat-expansion-panel-header>    
+                    <button mat-raised-button (click)="openBoardTreeDialog()">Add...</button>              
+                <app-board-hardware-tree> </app-board-hardware-tree>
                 </mat-expansion-panel>
                 <mat-expansion-panel (opened)="panelOpenState = true"
                                      (closed)="panelOpenState = false">
@@ -34,7 +28,8 @@
                       World Modelisation
                     </mat-panel-description>
                   </mat-expansion-panel-header>
-                  <app-blocktree  ></app-blocktree>
+                  <button mat-raised-button (click)="openModelicaTreeDialog()">Add...</button>            
+                  <app-world-model-tree></app-world-model-tree>                
                 </mat-expansion-panel>
               </mat-accordion>         
         </mat-nav-list>

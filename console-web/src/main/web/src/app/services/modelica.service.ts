@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { MessageService } from './message.service';
 import { catchError, map, tap } from 'rxjs/operators';
-import {Component, Point, Size, Port, Parameters, PortGroup} from '../model/model';
+import {Component, Point, Size, Port, Parameters, PortGroup, Package} from '../model/model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 
@@ -26,36 +26,52 @@ interface PortGroupJSON{
   definition: PortGroupDefinitionJSON;
 }
 
-interface PortGroupDefinitionJSON{
+interface PortGroupDefinitionJSON {
   name: string;
   svg: string;
 }
 
+interface PackageJSON {
+  name: string;
+  description: string;
+  id: string;
+  svgIcon: string;
+  packagesNames?: string[];
+  componentsName?: string[];
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
-export class ComponentService {
+export class ModelicaService {
 
     // map componnent ID with Component
-  dataMap = new Map<string, Component>();
-  private modelicaServiceUrl = 'api/modelica/component';  // URL to web api
-  constructor(private http: HttpClient, private messageService: MessageService, private sanitizer: DomSanitizer) { }
+  componentsMap = new Map<string, Component>();
+    // map package ID with package
+  packagesMap = new Map<string, Package>();
+  private modelicaServiceUrl = '/modelicamodel';  // URL to web api
 
-  getComponent(nodeId: string):  Observable<Component>  {
-    if (!this.dataMap.has(nodeId))
-    {
-      return this.getAndStore(nodeId);
+  constructor(
+    private http: HttpClient,
+    private messageService: MessageService,
+    private sanitizer: DomSanitizer) {
+    }
+
+  public getComponent(nodeId: string):  Observable<Component>  {
+    if (!this.componentsMap.has(nodeId)) {
+      return this.getComponentAndStore(nodeId);
     } else {
-      return of(this.dataMap.get(nodeId));
+      return of(this.componentsMap.get(nodeId));
     }
   }
 
-  private getAndStore(nodeId: string): Observable<Component>{
-    const url = `${this.modelicaServiceUrl}/${nodeId}`;
+  private getComponentAndStore(nodeId: string): Observable<Component>{
+    const url = `${this.modelicaServiceUrl}/component/${nodeId}`;
     return this.http.get<any>(url)
     .pipe(
-      map(apiResult => this.storeAndConvert(apiResult)),
-      catchError(this.handleError<Component>('getPackage',
+      map(apiResult => this.storeComponentAndConvert(apiResult)),
+      catchError(this.handleError<Component>('getComponent',
                                                     {id: '',
                                                      name: 'Unknown',
                                                      svgContent: '<svg/>',
@@ -68,9 +84,9 @@ export class ComponentService {
     ));
   }
 
-  private storeAndConvert(apiResult: ComponentJSON): Component {
+  private storeComponentAndConvert(apiResult: ComponentJSON): Component {
     const component = this.buildComponent(apiResult);
-    this.dataMap.set(component.id, component);
+    this.componentsMap.set(component.id, component);
     return component;
   }
 
@@ -92,6 +108,45 @@ export class ComponentService {
       svgContent: componentJSON.svgIcon.replace(/\<\?xml.+\?\>|\<\!DOCTYPE.+]\>/g, ''), // TODO: remove script
       portGroups: portGroups,
       parameters: parameters
+    });
+  }
+
+  public getPackage(nodeId: string):  Observable<Package>  {
+    if (!this.packagesMap.has(nodeId)) {
+      return this.getPackageAndStore(nodeId);
+    } else {
+      return of(this.packagesMap.get(nodeId));
+    }
+  }
+
+  private getPackageAndStore(nodeId: string): Observable<Package> {
+    const url = `${this.modelicaServiceUrl}/package/${nodeId}`;
+    return this.http.get<any>(url)
+    .pipe(
+      map(result => this.storePackageAndConvert(result))
+    );
+  }
+
+  private storePackageAndConvert(apiResult: PackageJSON): Package {
+    const _package = this.buildPackage(apiResult);
+    this.packagesMap.set(_package.id, _package);
+    return _package;
+  }
+
+  private buildPackage(packageJSON: PackageJSON): Package {
+    let componentIds: string [];
+    let childsIds: string [];
+    if (packageJSON.packagesNames !== undefined) {
+      childsIds = packageJSON.packagesNames.map(p => packageJSON.id + '.' + p);
+    }
+    if (packageJSON.componentsName !== undefined) {
+      componentIds = packageJSON.componentsName.map(c => packageJSON.id + '.' + c);
+    }
+
+    return Object.assign({}, packageJSON, {
+      icon: this.sanitizer.bypassSecurityTrustHtml(packageJSON.svgIcon), // TODO: remove script
+      childIds: childsIds,
+      componentIds: componentIds
     });
   }
 

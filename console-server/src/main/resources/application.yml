@@ -1,0 +1,25 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+      - id: storage_route
+        uri: http://127.0.0.1:8003
+        predicates:
+        - Path=/storage/{segment}
+        filters:
+        - RewritePath=/storage/(?<segment>/?.*), /$\{segment}
+      - id: storage_altair_route
+        uri: http://127.0.0.1:8003
+        predicates:
+        - Path=/vendor/altair/**       
+      - id: modelica_model_route
+        uri: http://127.0.0.1:8002
+        predicates:
+        - Path=/modelicamodel/**
+        filters:
+        - RewritePath=/modelicamodel/(?<segment>/?.*), /api/modelica/$\{segment}
+
+logging:
+  level:
+    root: INFO
+    org.springframework: DEBUG

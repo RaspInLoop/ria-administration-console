@@ -1,5 +1,9 @@
 {
-    "/api": {
+    "/modelicamodel": {
+      "target": "http://localhost:8080",
+      "secure": false
+    },
+    "/storage": {
       "target": "http://localhost:8080",
       "secure": false
     }

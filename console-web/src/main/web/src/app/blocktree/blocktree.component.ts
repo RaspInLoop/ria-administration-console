@@ -3,11 +3,8 @@ import {FlatTreeControl} from '@angular/cdk/tree';
 import {Component, Injectable} from '@angular/core';
 import {BehaviorSubject, merge, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
-import {PackageService, PackageTreeNode} from '../services/package.service';
-
-
-
-
+import {PackageService } from '../services/package.service';
+import { TreeDataService, PackageTreeNode } from '../services/tree-data-service';
 
 /**
  * File database, it can build a tree structured Json object from string.
@@ -28,7 +25,7 @@ export class DynamicDataSource {
   }
 
   constructor(private treeControl: FlatTreeControl<PackageTreeNode>,
-              private database: PackageService) {}
+              private database: TreeDataService) {}
 
   connect(collectionViewer: CollectionViewer): Observable<PackageTreeNode[]> {
     this.treeControl.expansionModel.onChange.subscribe(change => {
@@ -62,7 +59,7 @@ export class DynamicDataSource {
 
     node.isLoading = true;
     if (expand) {
-        const nodes = node.childrenIds.map(id => this.database.getPackageTreeNode(id)
+        const nodes = node.childrenIds.map(id => this.database.getTreeNode(id)
                                                   .subscribe( ptn => {
                                                     this.data.splice(index + 1, 0, ptn);
                                                     // notify the change
@@ -82,14 +79,8 @@ export class DynamicDataSource {
 }
 
 
-@Component({
-  selector: 'app-blocktree',
-  templateUrl: './blocktree.component.html',
-  styleUrls: ['./blocktree.component.scss'],
-    providers: [PackageService]
-})
 export class BlocktreeComponent {
-  constructor(database: PackageService) {
+  constructor(database: TreeDataService) {
     this.treeControl = new FlatTreeControl<PackageTreeNode>(this.getLevel, this.isExpandable);
     this.dataSource = new DynamicDataSource(this.treeControl, database);
     database.initialData().subscribe(packageTreeNode => {this.dataSource.data = [packageTreeNode];
@@ -97,6 +88,8 @@ export class BlocktreeComponent {
                                                           }
                                                           );
   }
+
+  selectedLeaf: PackageTreeNode;
 
   treeControl: FlatTreeControl<PackageTreeNode>;
 
@@ -111,4 +104,5 @@ export class BlocktreeComponent {
   drag(ev) {
     ev.dataTransfer.setData('text', ev.target.id);
   }
+
 }

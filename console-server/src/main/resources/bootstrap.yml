@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: console-server
+  cloud:
+    config:
+      enabled: false
+      uri: http://raspinloop-config-server:8888
+      fail-fast: true
+      retry:
+        max-attempts: 20

@@ -1,11 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { MessageService } from './message.service';
-import {ComponentService} from './component.service';
+import {ModelicaService} from './modelica.service'; //should be storageService
 import {Model, Package, Component, Link, PortGroupDefinition, PortGroup, Port } from '../model/model';
-import { ModelDescription } from '../model/modelDescription';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { catchError, map, tap } from 'rxjs/operators';
 
 import * as _ from 'lodash';
 import * as backbone from 'backbone';
@@ -32,33 +29,19 @@ export class GraphService {
   linkCtor:  joint.dia.Cell.Constructor<joint.dia.Link>;
 
   dataMap = new Map<string, Package>();
-  private graphsUrl = 'api/modelica/package';  // URL to web api
 
-  constructor( private http: HttpClient, private messageService: MessageService, private  componentService: ComponentService) {
+  constructor( private messageService: MessageService, private  modelicaService: ModelicaService) {
     this.currentGraphId = 0;
     this.graph = new joint.dia.Graph;
     this.messageService.add('GraphService: graph Ctor done.');
   }
 
   addComponenent(compId: string) {
-    this.componentService.getComponent(compId).subscribe(comp => this.updateComponent(comp));
+    this.modelicaService.getComponent(compId).subscribe(comp => this.updateComponent(comp));
   }
 
   updateComponent(component) {
       this.drawComponent(component);
-  }
-
-  addModel(modelId: string) {
-    this.getGraphModel(modelId).subscribe(model => this.updateModel(model));
-  }
-
-  updateModel(model) {
-    for (const component of model.components) {
-      this.drawComponent(component);
-    }
-    for (const link of model.links) {
-      this.drawLink(link);
-    }
   }
 
   drawComponent(component: Component) {
@@ -252,20 +235,4 @@ export class GraphService {
           link.transition('attrs/c2/atConnectionRatio', t, transitionOpt);
       });
    }
-
-  getGraphModel(id: string): Observable<Model> {
-    this.messageService.add('GraphService: fetched Model#' + id + '.');
-    const url = `${this.graphsUrl}/model/${id}`;
-    return this.http.get<Model>(url)
-      .pipe(
-        catchError(this.handleError<Model>('getGraphModel', EMPTY_MODEL))
-      );
-  }
-
-  saveGraphModel(): void {
-    const jsonString = JSON.stringify(this.graph.toJSON());
-    console.log(jsonString);
-    this.messageService.add('GraphService: current graph saved.');
-  }
-
 }

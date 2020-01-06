@@ -4,7 +4,7 @@ import { BlocktreeComponent } from './blocktree.component';
 
 describe('BlocktreeComponent', () => {
   let component: BlocktreeComponent;
-  let fixture: ComponentFixture<blocktreeComponent>;
+  let fixture: ComponentFixture<BlocktreeComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({

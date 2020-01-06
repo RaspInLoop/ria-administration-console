@@ -1,0 +1,18 @@
+<h1 mat-dialog-title>Select a Modelica component</h1>
+<div mat-dialog-content>
+        <mat-sidenav-container class="modelica-selection-container" autosize>
+            <mat-sidenav class="modelica-selection-sidenav-container" mode="side" opened>
+                <app-modelica-tree (selected)="onNodeSelected($event)"></app-modelica-tree>  
+            </mat-sidenav>
+            <mat-sidenav-content class="modelica-selection-preview">
+                <div class="modelica-selection-preview-title" >{{selectedModelica.item}}</div>
+                <svg class="modelica-selection-preview-icon" height="200px" width="300px" viewBox="-10 -10 24 20" >      
+                    <g [innerHtml]="selectedModelica.icon"/>
+                </svg>  
+            </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">No Thanks</button>
+  <button mat-button [mat-dialog-close]="data.selectedModelicaModel" cdkFocusInitial>Ok</button>
+</div>

@@ -1,4 +1,4 @@
-package org.raspinloop.web.pages;
+package org.raspinloop.web.administration;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -7,7 +7,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class PagesApplicationTests {
+public class AdministrationConsolesApplicationTests {
 
 	@Test
 	public void contextLoads() {

@@ -10,7 +10,6 @@ npm install jointjs --save npm install @types/jointjs --save-dev
 npm install lodash@3.10.1 --save npm install @types/lodash@3.10.1 --save-dev
 
 
-
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.

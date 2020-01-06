@@ -5,17 +5,8 @@ import { MessageService } from './message.service';
 import { catchError, map, tap } from 'rxjs/operators';
 import {Package} from '../model/model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-
-
-/** Flat node with expandable and level information */
-export class PackageTreeNode {
-  constructor(public id: string,
-              public item: string,
-              public icon: SafeHtml,
-              public level = 0,
-              public childrenIds: string[],
-              public isLoading = false) {}
-}
+import {TreeDataService, PackageTreeNode} from './tree-data-service';
+import { ModelicaService } from './modelica.service';
 
 interface PackageJSON {
   name: string;
@@ -33,52 +24,35 @@ interface PackageJSON {
  * Database for dynamic data. When expanding a node in the tree, the data source will need to fetch
  * the descendants data from the database.
  */
-export class PackageService {
-  // map package ID with package
-  dataMap = new Map<string, Package>();
-  private modelicaServiceUrl = 'api/modelica/package';  // URL to web api
+export class PackageService  implements TreeDataService {
 
-  constructor( private http: HttpClient, private messageService: MessageService, private sanitizer: DomSanitizer ) {
+
+  constructor(private modelicaService: ModelicaService,
+              private messageService: MessageService,
+              private sanitizer: DomSanitizer ) {
   }
 
   rootLevelNodes: string[] = ['Modelica'];
 
   /** Initial data from database */
   initialData(): Observable<PackageTreeNode> {
-    return this.getAndStore('Modelica');
+    return this.getTreeNode('Modelica');
   }
 
-  getPackageTreeNode(nodeId: string):  Observable<PackageTreeNode>  {
-    if (!this.dataMap.has(nodeId)) {
-      return this.getAndStore(nodeId);
-    } else {
-      const _package = this.dataMap.get(nodeId);
-      return of (new PackageTreeNode(_package.id,
-          _package.name,
-          _package.icon,
-          this.computeLevel(_package.id),
-          _package.childIds,
-          false));
-    }
+  getTreeNode(nodeId: string):  Observable<PackageTreeNode>  {
+    return this.modelicaService.getPackage(nodeId)
+      .pipe(
+        map(result => this.convert(result)),
+        catchError(this.handleError<PackageTreeNode>('getPackage',
+                                                      new PackageTreeNode('',
+                                                        'Unknown',
+                                                        this.sanitizer.bypassSecurityTrustHtml( '<svg/>'),
+                                                        0,
+                                                        [])))
+      );
   }
 
-  private getAndStore(nodeId: string): Observable<PackageTreeNode> {
-    const url = `${this.modelicaServiceUrl}/${nodeId}`;
-    return this.http.get<any>(url)
-    .pipe(
-      map(result => this.storeAndConvert(result)),
-      catchError(this.handleError<PackageTreeNode>('getPackage',
-                                                    new PackageTreeNode('',
-                                                      'Unknown',
-                                                      this.sanitizer.bypassSecurityTrustHtml( '<svg/>'),
-                                                      0,
-                                                      [])))
-    );
-  }
-
-  private storeAndConvert(packageJSON: PackageJSON): PackageTreeNode {
-    const _package = this.buildPackage(packageJSON);
-    this.dataMap.set(_package.id, _package);
+  private convert(_package: Package): PackageTreeNode {
     if (_package.childIds === undefined) {
       _package.childIds = [];
     }
@@ -93,23 +67,6 @@ export class PackageService {
   private computeLevel(id: string): number {
     // ID has the following form: package1.package2.package3.model
     return id.split('.').length - 1;
-  }
-
-  private buildPackage(packageJSON: PackageJSON): Package {
-    let componentIds: string [];
-    let childsIds: string [];
-    if (packageJSON.packagesNames !== undefined) {
-      childsIds = packageJSON.packagesNames.map(p => packageJSON.id + '.' + p);
-    }
-    if (packageJSON.componentsName !== undefined) {
-      componentIds = packageJSON.componentsName.map(c => packageJSON.id + '.' + c);
-    }
-
-    return Object.assign({}, packageJSON, {
-      icon: this.sanitizer.bypassSecurityTrustHtml(packageJSON.svgIcon), // TODO: remove script
-      childIds: childsIds,
-      componentIds: componentIds
-    });
   }
 
   /**
